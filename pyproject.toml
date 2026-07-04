@@ -1,0 +1,85 @@
+[project]
+name = "pgrelay"
+version = "0.1.0"
+description = "PostgreSQL-backed transactional outbox and reliable jobs for Python backends"
+authors = [
+    {name = "PgRelay maintainers"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "alembic (>=1.16.0,<2.0.0)",
+    "asyncpg (>=0.30.0,<1.0.0)",
+    "fastapi (>=0.115.0,<1.0.0)",
+    "httpx (>=0.28.0,<1.0.0)",
+    "prometheus-client (>=0.22.0,<1.0.0)",
+    "psycopg[binary] (>=3.2.0,<4.0.0)",
+    "pydantic (>=2.11.0,<3.0.0)",
+    "pydantic-settings (>=2.10.0,<3.0.0)",
+    "sqlalchemy[asyncio] (>=2.0.41,<2.1.0)",
+    "structlog (>=25.4.0,<26.0.0)",
+    "typer (>=0.16.0,<1.0.0)",
+    "uvicorn[standard] (>=0.35.0,<1.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+mypy = ">=1.16.0,<2.0.0"
+pytest = ">=8.4.0,<9.0.0"
+pytest-asyncio = ">=1.0.0,<2.0.0"
+pytest-cov = ">=6.2.0,<7.0.0"
+respx = ">=0.22.0,<1.0.0"
+ruff = ">=0.12.0,<1.0.0"
+testcontainers = {version = ">=4.10.0,<5.0.0", extras = ["postgres"]}
+
+[project.scripts]
+pgrelay = "pgrelay.cli.app:app"
+
+[tool.poetry]
+packages = [{include = "pgrelay", from = "src"}]
+include = [
+    {path = "src/pgrelay/py.typed", format = ["sdist", "wheel"]},
+    {path = "migrations", format = ["sdist", "wheel"]},
+    {path = "alembic.ini", format = ["sdist", "wheel"]}
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "C4", "SIM", "RUF"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"src/pgrelay/worker/http_executor.py" = ["ASYNC109"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+packages = ["pgrelay"]
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = [
+    "src/pgrelay/__main__.py",
+    "src/pgrelay/cli/*",
+    "src/pgrelay/worker/signals.py"
+]

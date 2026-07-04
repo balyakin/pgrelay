@@ -28,6 +28,19 @@ def insert_job_statement() -> TextClause:
     )
 
 
+def lock_claim_queues_statement() -> TextClause:
+    """Return typed queue lock statement for job claiming."""
+    return text(
+        """
+        SELECT q.name
+        FROM pgrelay_queue q
+        WHERE q.paused = false AND q.name = ANY(:queue_names)
+        ORDER BY q.name
+        FOR UPDATE
+        """
+    ).bindparams(bindparam("queue_names", type_=ARRAY(Text())))
+
+
 def claim_jobs_statement() -> TextClause:
     """Return typed claim jobs statement."""
     return text(

@@ -12,6 +12,7 @@ from pgrelay.repositories.jobs import JobRepository, JobRow
 from pgrelay.sdk.client import PgRelayClient
 from pgrelay.worker.dispatcher import ExecutorResult, JobDispatcher
 from pgrelay.worker.runner import WorkerRunner
+from tests.conftest import make_job_row
 
 
 class RaisingDispatcher:
@@ -40,6 +41,21 @@ class BlockingDispatcher:
             response_status=None,
             response_body_preview=None,
             duration_ms=0,
+        )
+
+
+class SuccessDispatcher:
+    """Dispatcher that returns success."""
+
+    async def dispatch(self, job: JobRow) -> ExecutorResult:
+        """Return a successful execution result."""
+        return ExecutorResult(
+            outcome="succeeded",
+            error_type=None,
+            error_message=None,
+            response_status=None,
+            response_body_preview=None,
+            duration_ms=7,
         )
 
 
@@ -178,3 +194,95 @@ async def test_heartbeat_failure_log_includes_error_message(settings: Settings) 
         "error_type": "RuntimeError",
         "error_message": "heartbeat boom",
     } in logger.events
+
+
+async def test_dispatch_job_routes_non_http_without_timeout(settings: Settings) -> None:
+    """Non HTTP jobs are dispatched without HTTP timeout wrapper."""
+    # ARRANGE
+    runner = WorkerRunner(settings=settings, session_factory=cast(async_sessionmaker[AsyncSession], object()))
+    job = make_job_row(kind="handler")
+
+    # ACT
+    result = await runner._dispatch_job(cast(JobDispatcher, SuccessDispatcher()), job)
+
+    # ASSERT
+    assert result.outcome == "succeeded"
+    assert result.duration_ms == 7
+
+
+async def test_dispatch_job_returns_timeout_result(settings: Settings) -> None:
+    """HTTP dispatch timeout returns timeout result."""
+    # ARRANGE
+    runner = WorkerRunner(settings=settings, session_factory=cast(async_sessionmaker[AsyncSession], object()))
+    dispatcher = BlockingDispatcher()
+    job = make_job_row(kind="http", timeout_seconds=-1)
+
+    # ACT
+    result = await runner._dispatch_job(cast(JobDispatcher, dispatcher), job)
+
+    # ASSERT
+    assert result.outcome == "timeout"
+    assert result.error_type == "TimeoutError"
+    assert result.error_message == "HTTP job timed out"
+
+
+async def test_finish_heartbeat_cancels_pending_task(settings: Settings) -> None:
+    """Pending heartbeat cancellation keeps lease ownership."""
+
+    # ARRANGE
+    async def wait_forever() -> bool:
+        await asyncio.sleep(30)
+        return False
+
+    runner = WorkerRunner(settings=settings, session_factory=cast(async_sessionmaker[AsyncSession], object()))
+    task = asyncio.create_task(wait_forever())
+
+    # ACT
+    lease_owned = await runner._finish_heartbeat(task)
+
+    # ASSERT
+    assert lease_owned is True
+    assert task.cancelled() is True
+
+
+async def test_await_cancelled_logs_unexpected_task_error(settings: Settings) -> None:
+    """Await cancelled helper logs non cancellation errors."""
+
+    # ARRANGE
+    async def fail_task() -> None:
+        raise RuntimeError("cleanup boom")
+
+    runner = WorkerRunner(settings=settings, session_factory=cast(async_sessionmaker[AsyncSession], object()))
+    logger = FakeLogger()
+    runner._logger = cast(Any, logger)
+    task = asyncio.create_task(fail_task())
+    await asyncio.sleep(0)
+
+    # ACT
+    await runner._await_cancelled(task)
+
+    # ASSERT
+    assert {
+        "event": "worker_cancelled_task_failed",
+        "error_type": "RuntimeError",
+        "error_message": "cleanup boom",
+    } in logger.events
+
+
+async def test_shutdown_inflight_cancels_pending_task(settings: Settings) -> None:
+    """Shutdown cancels pending in-flight tasks after grace timeout."""
+
+    # ARRANGE
+    async def wait_forever() -> None:
+        await asyncio.sleep(30)
+
+    runner_settings = settings.model_copy(update={"worker_shutdown_grace_seconds": 0})
+    runner = WorkerRunner(settings=runner_settings, session_factory=cast(async_sessionmaker[AsyncSession], object()))
+    task = asyncio.create_task(wait_forever())
+    runner._inflight[task] = make_job_row()
+
+    # ACT
+    await runner._shutdown_inflight()
+
+    # ASSERT
+    assert task.cancelled() is True

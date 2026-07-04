@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pgrelay.db.models import PgRelayJob
 from pgrelay.errors import RepositoryError
 from pgrelay.repositories.job_rows import JobListResult, JobRow, PurgeResult, row_from_mapping, row_from_model
-from pgrelay.repositories.job_sql import claim_jobs_statement, insert_job_statement
+from pgrelay.repositories.job_sql import claim_jobs_statement, insert_job_statement, lock_claim_queues_statement
 from pgrelay.repositories.job_state import JobStateRepositoryMixin
 from pgrelay.repositories.queues import QueueRepository
 
@@ -163,11 +163,13 @@ class JobRepository(JobStateRepositoryMixin):
     ) -> list[JobRow]:
         """Claim due jobs using SKIP LOCKED and queue concurrency slots."""
         try:
+            queue_names_list = list(queue_names)
+            await session.execute(lock_claim_queues_statement(), {"queue_names": queue_names_list})
             result = await session.execute(
                 claim_jobs_statement(),
                 {
                     "worker_id": worker_id,
-                    "queue_names": list(queue_names),
+                    "queue_names": queue_names_list,
                     "batch_size": batch_size,
                     "lease_seconds": lease_seconds,
                 },

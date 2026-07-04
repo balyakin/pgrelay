@@ -63,6 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose up --build -d
+      - run: timeout 180 docker compose up --build -d
       - run: curl --retry 30 --retry-all-errors --retry-delay 2 -fsS http://localhost:8090/healthz
       - run: curl --retry 30 --retry-all-errors --retry-delay 2 -fsS http://localhost:8090/readyz
+      - if: failure()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down -v

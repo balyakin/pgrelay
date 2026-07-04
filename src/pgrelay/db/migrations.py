@@ -8,9 +8,18 @@ from alembic.config import Config
 from pgrelay.config.settings import Settings
 
 
+def get_migration_root() -> Path:
+    """Return migration root for source checkout or installed wheel."""
+    package_file = Path(__file__).resolve()
+    source_root = package_file.parents[3]
+    if (source_root / "alembic.ini").exists():
+        return source_root
+    return package_file.parents[2]
+
+
 def create_alembic_config(settings: Settings) -> Config:
     """Create Alembic configuration for PgRelay migrations."""
-    root = Path(__file__).resolve().parents[3]
+    root = get_migration_root()
     config = Config(str(root / "alembic.ini"))
     config.set_main_option("script_location", str(root / "migrations"))
     config.set_main_option("sqlalchemy.url", settings.database_url)

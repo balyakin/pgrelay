@@ -1,5 +1,7 @@
 """Admin repository and DB helper tests."""
 
+from pathlib import Path
+
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -183,6 +185,33 @@ def test_alembic_config_uses_explicit_database_url(settings: Settings) -> None:
 
     # ASSERT
     assert config.get_main_option("sqlalchemy.url") == settings.database_url
+
+
+def test_alembic_config_uses_installed_wheel_layout(
+    settings: Settings,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Programmatic Alembic config works from installed wheel layout."""
+    # ARRANGE
+    site_packages = tmp_path / "site-packages"
+    module_file = site_packages / "pgrelay" / "db" / "migrations.py"
+    module_file.parent.mkdir(parents=True)
+    module_file.write_text("", encoding="utf-8")
+    config_file = site_packages / "alembic.ini"
+    config_file.write_text("[alembic]\n", encoding="utf-8")
+    migration_dir = site_packages / "migrations"
+    migration_dir.mkdir()
+    monkeypatch.setattr(migrations, "__file__", str(module_file))
+
+    # ACT
+    config = migrations.create_alembic_config(settings)
+
+    # ASSERT
+    script_location = config.get_main_option("script_location")
+    assert script_location is not None
+    assert Path(str(config.config_file_name)).resolve() == config_file.resolve()
+    assert Path(script_location).resolve() == migration_dir.resolve()
 
 
 async def test_repository_error_paths_roll_back(db_session: AsyncSession) -> None:

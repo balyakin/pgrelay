@@ -179,7 +179,7 @@ def test_attempt_response_redacts_response_body_preview() -> None:
         "error_type": None,
         "error_message": None,
         "response_status": 500,
-        "response_body_preview": "{\"token\":\"target-secret\"}",
+        "response_body_preview": '{"token":"target-secret"}',
     }
 
     # ACT
@@ -187,8 +187,6 @@ def test_attempt_response_redacts_response_body_preview() -> None:
 
     # ASSERT
     assert response.response_body_preview == REDACTED_VALUE
-
-
 
 
 async def test_missing_job_returns_404(api_client: httpx.AsyncClient) -> None:

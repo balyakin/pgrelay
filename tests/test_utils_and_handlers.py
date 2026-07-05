@@ -166,9 +166,7 @@ def test_cgnat_ip_address_is_blocked() -> None:
 def test_prod_requires_http_allowed_hosts(settings: Settings) -> None:
     """Production runtime requires HTTP allowed hosts."""
     # ARRANGE
-    configured = settings.model_copy(
-        update={"env": "prod", "api_auth_tokens": "prod-token", "http_allowed_hosts": ""}
-    )
+    configured = settings.model_copy(update={"env": "prod", "api_auth_tokens": "prod-token", "http_allowed_hosts": ""})
 
     # ACT
     try:

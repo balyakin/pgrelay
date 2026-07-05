@@ -4,11 +4,11 @@ PostgreSQL-backed transactional outbox and reliable background jobs for Python s
 
 [![CI][badge-ci]][ci]
 [![PyPI][badge-pypi]][pypi]
-![Python][badge-python]
-![PostgreSQL][badge-postgres]
-![Coverage gate][badge-coverage]
-![Checks][badge-checks]
-![Docker smoke][badge-docker]
+[![Python][badge-python]][pypi]
+[![PostgreSQL][badge-postgres]][production]
+[![Coverage gate][badge-coverage]][ci]
+[![Checks][badge-checks]][ci]
+[![Docker smoke][badge-docker]][ci]
 [![License: MIT][badge-license]][license]
 
 CI runs Ruff, mypy, pytest with an 85% coverage gate across Python 3.12/3.13 and PostgreSQL 15/16/17, plus a
@@ -53,6 +53,9 @@ use the tool built for that job.
 
 For trade-offs against nearby alternatives, see
 [Comparison with Celery, Taskiq, Procrastinate, and PgQueuer](docs/comparison.md).
+
+For operational limits, sizing notes, polling cost, retention, vacuum, and production checks, see
+[Production Readiness and Limits](docs/production.md).
 
 ## Quick Start
 
@@ -255,3 +258,4 @@ This project was developed with AI assistance and is maintained by the author.
 [ci]: https://github.com/balyakin/pgrelay/actions/workflows/ci.yml
 [license]: LICENSE
 [pypi]: https://pypi.org/project/pgrelay/
+[production]: docs/production.md

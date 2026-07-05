@@ -4,6 +4,43 @@ PgRelay is production-shaped, not production-proven at arbitrary scale. Treat th
 inputs, not vendor throughput claims. Benchmark on your own PostgreSQL instance, with your payload size, retention, job
 duration, and worker count.
 
+## When Not to Use PgRelay
+
+Do not use PgRelay when:
+
+- the queue is expected to be the central messaging backbone for many services;
+- you need high-throughput fan-out streams;
+- jobs may run for hours and require durable workflow state;
+- workers must be written in multiple languages;
+- losing PostgreSQL availability must not stop job processing;
+- you need exactly-once external side effects;
+- queue churn would compete with your primary OLTP workload.
+
+## Delivery Guarantees
+
+PgRelay provides at-least-once execution.
+
+A job may be executed more than once when:
+
+- a worker completes the external side effect but crashes before recording success;
+- the lease expires while the handler is still running;
+- the database connection is lost after the side effect has happened;
+- an operator replays a job manually;
+- a downstream target times out after processing the request.
+
+Handlers and HTTP receivers must be idempotent.
+
+## HTTP Job Security
+
+For HTTP jobs:
+
+- keep `PGRELAY_HTTP_ALLOWED_HOSTS` as narrow as possible;
+- keep private network targets blocked unless explicitly needed;
+- do not allow arbitrary user-provided URLs to become job targets;
+- treat job payloads as operationally sensitive data;
+- use receiver-side idempotency keys;
+- set downstream timeouts low enough that leases do not expire during normal calls.
+
 ## Expected Throughput
 
 PgRelay is usually bound by job duration first and PostgreSQL write churn second. A successful job creates at least:
@@ -15,10 +52,10 @@ PgRelay is usually bound by job duration first and PostgreSQL write churn second
 
 Long-running jobs also write lease heartbeats. Retryable failures add more state updates and attempt rows.
 
-The useful upper bound is:
+A simple execution-capacity estimate is:
 
 ```text
-max_completed_jobs_per_second <= worker_processes * PGRELAY_WORKER_CONCURRENCY / average_job_seconds
+execution_capacity_jobs_per_second ~= worker_processes * PGRELAY_WORKER_CONCURRENCY / average_job_seconds
 ```
 
 Examples before database overhead, target throttling, retries, and network latency:
@@ -27,8 +64,9 @@ Examples before database overhead, target throttling, retries, and network laten
 - 4 workers * concurrency 16 / 0.5s average job = at most 128 jobs/s.
 - 4 workers * concurrency 16 / 2.0s average job = at most 32 jobs/s.
 
-Those examples are arithmetic bounds, not measured PgRelay benchmarks. If the queue itself is your bottleneck, measure
-claim latency, final-state update latency, PostgreSQL CPU, WAL volume, and autovacuum lag before raising concurrency.
+Those examples are arithmetic capacity estimates, not measured PgRelay benchmarks. If the queue itself is your
+bottleneck, measure claim latency, final-state update latency, PostgreSQL CPU, WAL volume, and autovacuum lag before
+raising concurrency.
 
 ## Polling Cost
 
@@ -105,7 +143,7 @@ It will degrade if the pending set is huge, table statistics are stale, or final
 Purge filters final jobs by `status` and `completed_at`. If you keep millions of final rows, test the purge plan. A
 site-local partial index on final `(status, completed_at)` rows may be justified when purge becomes expensive.
 
-## 100k and 1M Jobs
+## Row Count Rules of Thumb
 
 Total row count matters less than active row count and bloat.
 

@@ -49,8 +49,8 @@
   <path d="M150 420h662" stroke="#e5eeeb"/>
 
   <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#233d35">
-    <rect x="150" y="442" width="80" height="26" rx="13" fill="#e8f6ee"/>
-    <text x="166" y="460" fill="#246b42" font-weight="700">succeeded</text>
+    <rect x="150" y="442" width="96" height="26" rx="13" fill="#e8f6ee"/>
+    <text x="158" y="460" fill="#246b42" font-weight="700">succeeded</text>
     <text x="265" y="460">order.webhook</text>
     <text x="552" y="460">default</text>
     <text x="700" y="460">1 / 10</text>

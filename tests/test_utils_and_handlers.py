@@ -7,6 +7,7 @@ from pgrelay.errors import PermanentJobError, RetryableJobError, ValidationError
 from pgrelay.utils.ids import generate_trace_id, generate_worker_id
 from pgrelay.utils.json import sha256_json
 from pgrelay.utils.redaction import REDACTED_VALUE, redact_mapping
+from pgrelay.utils.validation import is_blocked_ip_address
 from pgrelay.worker.backoff import calculate_retry_delay_seconds
 from pgrelay.worker.dispatcher import ExecutorResult, JobDispatcher
 from pgrelay.worker.handlers import HandlerRegistry
@@ -145,3 +146,61 @@ def test_backoff_ids_json_and_redaction(settings: Settings) -> None:
     assert len(digest) == 64
     assert redacted["payload"] == REDACTED_VALUE
     assert redacted["nested"]["Authorization"] == REDACTED_VALUE
+
+
+def test_cgnat_ip_address_is_blocked() -> None:
+    """CGNAT IP address is blocked."""
+    # ARRANGE
+    cgnat_address = "100.64.1.1"
+    public_address = "8.8.8.8"
+
+    # ACT
+    cgnat_blocked = is_blocked_ip_address(cgnat_address)
+    public_blocked = is_blocked_ip_address(public_address)
+
+    # ASSERT
+    assert cgnat_blocked is True
+    assert public_blocked is False
+
+
+def test_prod_requires_http_allowed_hosts(settings: Settings) -> None:
+    """Production runtime requires HTTP allowed hosts."""
+    # ARRANGE
+    configured = settings.model_copy(
+        update={"env": "prod", "api_auth_tokens": "prod-token", "http_allowed_hosts": ""}
+    )
+
+    # ACT
+    try:
+        configured.validate_runtime()
+    except ValueError as exc:
+        error = str(exc)
+    else:
+        error = ""
+
+    # ASSERT
+    assert error == "PGRELAY_HTTP_ALLOWED_HOSTS is required when PGRELAY_ENV=prod"
+
+
+def test_prod_rejects_default_read_only_api_token(settings: Settings) -> None:
+    """Production runtime rejects default read-only API token."""
+    # ARRANGE
+    configured = settings.model_copy(
+        update={
+            "env": "prod",
+            "api_auth_tokens": "prod-token",
+            "api_read_only_auth_tokens": "dev-token-change-me",
+            "http_allowed_hosts": "example.com",
+        }
+    )
+
+    # ACT
+    try:
+        configured.validate_runtime()
+    except ValueError as exc:
+        error = str(exc)
+    else:
+        error = ""
+
+    # ASSERT
+    assert error == "Default dev API token is forbidden when PGRELAY_ENV=prod"

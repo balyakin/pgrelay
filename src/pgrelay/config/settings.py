@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = Field(default=8090, ge=1, le=65535)
     api_auth_tokens: str = ""
+    api_read_only_auth_tokens: str = ""
 
     worker_id_prefix: str = Field(default="worker", min_length=3, max_length=64)
     worker_queues: str = DEFAULT_QUEUE_NAME
@@ -92,14 +93,27 @@ class Settings(BaseSettings):
                 tokens.add(token)
         return tokens
 
+    def get_read_only_api_tokens(self) -> set[str]:
+        """Return configured read-only API bearer tokens."""
+        tokens = set()
+        parts = self.api_read_only_auth_tokens.split(",")
+        for part in parts:
+            token = part.strip()
+            if token:
+                tokens.add(token)
+        return tokens
+
     def validate_runtime(self) -> None:
         """Validate settings that depend on runtime environment."""
         tokens = self.get_api_tokens()
-        default_token_used = DEFAULT_API_TOKEN in tokens
+        read_only_tokens = self.get_read_only_api_tokens()
+        default_token_used = DEFAULT_API_TOKEN in tokens or DEFAULT_API_TOKEN in read_only_tokens
         if self.env == "prod" and not tokens:
             raise ValueError("PGRELAY_API_AUTH_TOKENS is required when PGRELAY_ENV=prod")
         if self.env == "prod" and default_token_used:
             raise ValueError("Default dev API token is forbidden when PGRELAY_ENV=prod")
+        if self.env == "prod" and not self.get_allowed_hosts():
+            raise ValueError("PGRELAY_HTTP_ALLOWED_HOSTS is required when PGRELAY_ENV=prod")
         minimum_pool_size = self.worker_concurrency + 2
         actual_pool_size = self.db_pool_size + self.db_max_overflow
         if actual_pool_size < minimum_pool_size:

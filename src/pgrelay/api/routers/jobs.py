@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pgrelay.api.dependencies import get_enqueue_service, get_job_service, get_session, require_auth
+from pgrelay.api.dependencies import get_enqueue_service, get_job_service, get_session, require_auth, require_write_auth
 from pgrelay.schemas.enqueue import EnqueueJobRequest
 from pgrelay.schemas.jobs import (
     AttemptResponse,
@@ -25,7 +25,12 @@ ENQUEUE_SERVICE_DEPENDENCY = Depends(get_enqueue_service)
 JOB_SERVICE_DEPENDENCY = Depends(get_job_service)
 
 
-@router.post("", response_model=EnqueueResult, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EnqueueResult,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_write_auth)],
+)
 async def enqueue_job(
     request: EnqueueJobRequest,
     response: Response,
@@ -86,7 +91,12 @@ async def get_attempts(
     return await service.attempts_for_job(session, job_id=job_id)
 
 
-@router.post("/{job_id}/replay", response_model=ReplayJobResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{job_id}/replay",
+    response_model=ReplayJobResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_write_auth)],
+)
 async def replay_job(
     job_id: UUID,
     request: ReplayJobRequest,
@@ -97,7 +107,7 @@ async def replay_job(
     return await service.replay(session, job_id=job_id, force=request.force)
 
 
-@router.post("/{job_id}/cancel", response_model=CancelJobResponse)
+@router.post("/{job_id}/cancel", response_model=CancelJobResponse, dependencies=[Depends(require_write_auth)])
 async def cancel_job(
     job_id: UUID,
     session: AsyncSession = SESSION_DEPENDENCY,

@@ -4,7 +4,14 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from pgrelay.utils.redaction import REDACTED_VALUE, redact_headers
+
+
+def get_redacted_mapping() -> dict[str, str]:
+    """Return a standard redacted mapping."""
+    return {"redacted": REDACTED_VALUE}
 
 
 class JobResponse(BaseModel):
@@ -37,6 +44,14 @@ class JobResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None
+
+    @model_validator(mode="after")
+    def redact_sensitive_fields(self) -> "JobResponse":
+        """Redact sensitive fields before returning API responses."""
+        self.payload = get_redacted_mapping()
+        self.headers = redact_headers(self.headers)
+        self.metadata = get_redacted_mapping()
+        return self
 
 
 class JobListItem(BaseModel):
@@ -94,6 +109,13 @@ class AttemptResponse(BaseModel):
     error_message: str | None
     response_status: int | None
     response_body_preview: str | None
+
+    @model_validator(mode="after")
+    def redact_sensitive_fields(self) -> "AttemptResponse":
+        """Redact sensitive fields before returning API responses."""
+        if self.response_body_preview is not None:
+            self.response_body_preview = REDACTED_VALUE
+        return self
 
 
 class ReplayJobRequest(BaseModel):

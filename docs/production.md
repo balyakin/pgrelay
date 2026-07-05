@@ -35,9 +35,11 @@ Handlers and HTTP receivers must be idempotent.
 For HTTP jobs:
 
 - keep `PGRELAY_HTTP_ALLOWED_HOSTS` as narrow as possible;
+- set `PGRELAY_HTTP_ALLOWED_HOSTS` before running with `PGRELAY_ENV=prod`;
 - keep private network targets blocked unless explicitly needed;
 - do not allow arbitrary user-provided URLs to become job targets;
 - treat job payloads as operationally sensitive data;
+- use read-only admin tokens for dashboards and monitoring;
 - use receiver-side idempotency keys;
 - set downstream timeouts low enough that leases do not expire during normal calls.
 
@@ -270,7 +272,8 @@ Keep a margin for migrations, `pgrelay doctor`, `pgrelay purge`, psql, monitorin
 
 Before production:
 
-- set `PGRELAY_ENV=prod` and real `PGRELAY_API_AUTH_TOKENS`;
+- set `PGRELAY_ENV=prod`, real `PGRELAY_API_AUTH_TOKENS`, and `PGRELAY_HTTP_ALLOWED_HOSTS`;
+- use `PGRELAY_API_READ_ONLY_AUTH_TOKENS` for monitoring clients;
 - benchmark enqueue, claim, finish, retry, and purge on production-like PostgreSQL;
 - set retention from expected jobs/day, not from defaults;
 - alert on oldest pending age, dead-letter growth, worker heartbeat age, and PostgreSQL pool saturation;

@@ -20,6 +20,9 @@ platform". It stores jobs in the same PostgreSQL database your application alrea
 small asyncio worker. The SDK writes into your existing SQLAlchemy `AsyncSession`, so a domain row and the job that
 publishes it can commit or roll back together.
 
+PgRelay 0.1.0 is not a `LISTEN/NOTIFY` queue. Workers poll PostgreSQL, claim ready rows with `FOR UPDATE SKIP LOCKED`,
+and use durable leases for recovery after worker crashes.
+
 It is intentionally not an exactly-once system. PgRelay gives you at-least-once delivery, retries, leases, dead-letter
 jobs, replay, and enough operator API to see what happened. Any external side effect still needs an idempotency key on
 the receiving side.
@@ -91,7 +94,8 @@ http://localhost:8090/docs
 ```
 
 The default token is for local development only. Set `PGRELAY_API_AUTH_TOKENS` before running anything that is reachable
-outside your machine.
+outside your machine. Use `PGRELAY_API_READ_ONLY_AUTH_TOKENS` for monitoring clients that should only read admin API
+state.
 
 ## Enqueue Inside Your Transaction
 
@@ -131,6 +135,10 @@ await client.enqueue_handler(
     idempotency_key=f"recalculate:{order.id}",
 )
 ```
+
+Python handler jobs use an explicit process-local handler registry: each worker process must register the same handler
+names in its application code. HTTP jobs do not use that registry; job state, attempts, leases, and queue state live in
+PostgreSQL.
 
 ## CLI
 
@@ -190,11 +198,12 @@ The settings you will usually touch first:
 | Setting | Why it matters |
 | --- | --- |
 | `PGRELAY_DATABASE_URL` | Runtime database URL. It must use `postgresql+asyncpg://`. |
-| `PGRELAY_API_AUTH_TOKENS` | Comma-separated bearer tokens for the admin API. Required in production. |
+| `PGRELAY_API_AUTH_TOKENS` | Comma-separated bearer tokens with read/write admin API access. Required in production. |
+| `PGRELAY_API_READ_ONLY_AUTH_TOKENS` | Comma-separated bearer tokens for read-only admin API access. |
 | `PGRELAY_WORKER_QUEUES` | Comma-separated queue names a worker should claim from. |
 | `PGRELAY_WORKER_CONCURRENCY` | Maximum in-flight jobs per worker process. |
 | `PGRELAY_WORKER_LEASE_SECONDS` | Lease duration before another worker may recover a stuck job. |
-| `PGRELAY_HTTP_ALLOWED_HOSTS` | Allowlist for HTTP job targets. |
+| `PGRELAY_HTTP_ALLOWED_HOSTS` | Allowlist for HTTP job targets. Required in production. |
 | `PGRELAY_BLOCK_PRIVATE_NETWORK_TARGETS` | Blocks HTTP jobs from reaching private network targets by default. |
 | `PGRELAY_RETENTION_SUCCEEDED_DAYS` | How long succeeded jobs are kept before purge. |
 | `PGRELAY_RETENTION_DEAD_LETTER_DAYS` | How long dead-letter jobs are kept before purge. |
@@ -212,14 +221,16 @@ pending -> cancelled
 dead_letter/cancelled -> pending  (replay creates a new job id)
 ```
 
-Workers claim pending jobs with PostgreSQL row locks and `SKIP LOCKED`, then heartbeat the lease while the job runs. If
-a worker dies, lease recovery returns the job to `pending` or moves it to `dead_letter` when attempts are exhausted.
+Workers poll PostgreSQL, claim pending jobs with row locks and `SKIP LOCKED`, then heartbeat the lease while the job
+runs. If a worker dies, lease recovery returns the job to `pending` or moves it to `dead_letter` when attempts are
+exhausted.
 
 ## Operational Notes
 
 - Design receivers to handle duplicate delivery. At-least-once is the contract.
 - Use stable `idempotency_key` values for effects that should not be queued twice.
 - Keep HTTP job hosts allowlisted. The worker follows no redirects and blocks private network targets by default.
+- Admin API job details redact payloads, metadata, secret headers, and response body previews.
 - Watch dead-letter jobs. They are usually either a receiver problem, a bad payload, or a missing idempotency rule.
 - Run more worker processes for throughput, but size the database pool so each worker has room to claim, heartbeat, and
   finish jobs.
@@ -236,8 +247,8 @@ This repository is currently at `0.1.0`. The core API, worker, SDK, migrations, 
 the project should still be treated as young. Pin versions, test against your own failure modes, and expect the edges to
 be sharper than a mature hosted queue.
 
-Planned next steps are intentionally modest: better wakeups with PostgreSQL `LISTEN/NOTIFY`, batch enqueue, and
-OpenTelemetry integration.
+Planned next steps are intentionally modest: optional PostgreSQL `LISTEN/NOTIFY` wakeups on top of polling, batch
+enqueue, and OpenTelemetry integration.
 
 ## License
 

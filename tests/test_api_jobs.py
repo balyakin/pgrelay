@@ -1,6 +1,8 @@
 """Admin API tests."""
 
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from uuid import UUID
 
 import httpx
 import pytest
@@ -9,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from pgrelay.api.app import create_app
 from pgrelay.config.settings import Settings
+from pgrelay.schemas.jobs import AttemptResponse
 from pgrelay.security.auth import require_api_token
+from pgrelay.utils.redaction import REDACTED_VALUE
 
 
 @pytest.fixture()
@@ -72,6 +76,26 @@ async def test_valid_token_works(api_client: httpx.AsyncClient) -> None:
     assert response.status_code == 201
 
 
+async def test_read_only_token_cannot_enqueue(settings: Settings) -> None:
+    """Read-only token cannot enqueue jobs."""
+    # ARRANGE
+    settings = settings.model_copy(update={"api_read_only_auth_tokens": "read-token"})
+    app = create_app(settings=settings)
+    payload = {"kind": "handler", "name": "handler", "payload": {}}
+    headers = {"Authorization": "Bearer read-token"}
+
+    # ACT
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post("/v1/jobs", json=payload, headers=headers)
+            stats = await client.get("/v1/stats", headers=headers)
+
+    # ASSERT
+    assert response.status_code == 403
+    assert stats.status_code == 200
+
+
 async def test_duplicate_idempotency_returns_200(api_client: httpx.AsyncClient) -> None:
     """Duplicate idempotency returns 200 and created=false."""
     # ARRANGE
@@ -107,13 +131,23 @@ async def test_list_jobs_excludes_payload(api_client: httpx.AsyncClient) -> None
     assert "metadata" not in item
 
 
-async def test_detail_job_includes_payload(api_client: httpx.AsyncClient) -> None:
-    """Detail job includes payload."""
+async def test_detail_job_redacts_sensitive_fields(api_client: httpx.AsyncClient) -> None:
+    """Detail job redacts sensitive fields."""
     # ARRANGE
     headers = {"Authorization": "Bearer test-token"}
     created = await api_client.post(
         "/v1/jobs",
-        json={"kind": "handler", "name": "handler", "payload": {"value": 1}},
+        json={
+            "kind": "http",
+            "name": "webhook",
+            "payload": {
+                "method": "POST",
+                "url": "https://example.com/webhook",
+                "headers": {"Authorization": "Bearer target-secret", "X-Trace": "trace"},
+                "json": {"card": "4111111111111111"},
+            },
+            "metadata": {"tenant": "acme"},
+        },
         headers=headers,
     )
     job_id = created.json()["job_id"]
@@ -123,7 +157,38 @@ async def test_detail_job_includes_payload(api_client: httpx.AsyncClient) -> Non
 
     # ASSERT
     assert response.status_code == 200
-    assert response.json()["payload"] == {"value": 1}
+    body = response.json()
+    assert body["payload"] == {"redacted": REDACTED_VALUE}
+    assert body["headers"] == {}
+    assert body["metadata"] == {"redacted": REDACTED_VALUE}
+
+
+def test_attempt_response_redacts_response_body_preview() -> None:
+    """Attempt response redacts response body preview."""
+    # ARRANGE
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    attempt = {
+        "id": UUID("00000000-0000-0000-0000-000000000001"),
+        "job_id": UUID("00000000-0000-0000-0000-000000000002"),
+        "attempt_number": 1,
+        "worker_id": "worker",
+        "status": "failed",
+        "started_at": now,
+        "finished_at": now,
+        "duration_ms": 10,
+        "error_type": None,
+        "error_message": None,
+        "response_status": 500,
+        "response_body_preview": "{\"token\":\"target-secret\"}",
+    }
+
+    # ACT
+    response = AttemptResponse.model_validate(attempt)
+
+    # ASSERT
+    assert response.response_body_preview == REDACTED_VALUE
+
+
 
 
 async def test_missing_job_returns_404(api_client: httpx.AsyncClient) -> None:

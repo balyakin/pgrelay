@@ -63,7 +63,8 @@ def is_blocked_ip_address(address: str) -> bool:
     """Return true when an address belongs to a blocked range."""
     ip_address = ipaddress.ip_address(address)
     return (
-        ip_address.is_private
+        not ip_address.is_global
+        or ip_address.is_private
         or ip_address.is_loopback
         or ip_address.is_link_local
         or ip_address.is_multicast

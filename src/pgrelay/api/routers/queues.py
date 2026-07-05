@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pgrelay.api.dependencies import get_queue_service, get_session, require_auth
+from pgrelay.api.dependencies import get_queue_service, get_session, require_auth, require_write_auth
 from pgrelay.schemas.queues import QueueResponse, QueueUpdateRequest
 from pgrelay.services.queues import QueueService
 
@@ -21,7 +21,7 @@ async def list_queues(
     return await service.list_queues(session)
 
 
-@router.put("/{queue_name}", response_model=QueueResponse)
+@router.put("/{queue_name}", response_model=QueueResponse, dependencies=[Depends(require_write_auth)])
 async def update_queue(
     queue_name: str,
     request: QueueUpdateRequest,
@@ -32,7 +32,7 @@ async def update_queue(
     return await service.upsert_or_update(session, queue_name=queue_name, request=request)
 
 
-@router.post("/{queue_name}/pause", response_model=QueueResponse)
+@router.post("/{queue_name}/pause", response_model=QueueResponse, dependencies=[Depends(require_write_auth)])
 async def pause_queue(
     queue_name: str,
     session: AsyncSession = SESSION_DEPENDENCY,
@@ -42,7 +42,7 @@ async def pause_queue(
     return await service.pause(session, queue_name=queue_name)
 
 
-@router.post("/{queue_name}/resume", response_model=QueueResponse)
+@router.post("/{queue_name}/resume", response_model=QueueResponse, dependencies=[Depends(require_write_auth)])
 async def resume_queue(
     queue_name: str,
     session: AsyncSession = SESSION_DEPENDENCY,

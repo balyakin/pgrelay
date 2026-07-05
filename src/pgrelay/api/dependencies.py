@@ -7,7 +7,7 @@ from fastapi import Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from pgrelay.config.settings import Settings
-from pgrelay.security.auth import require_api_token
+from pgrelay.security.auth import require_api_token, require_api_write_token
 from pgrelay.services.enqueue import EnqueueService
 from pgrelay.services.jobs import JobService
 from pgrelay.services.queues import QueueService
@@ -60,3 +60,8 @@ def get_worker_service(request: Request) -> WorkerService:
 async def require_auth(request: Request, authorization: str | None = Header(default=None)) -> None:
     """Require API authentication for admin endpoints."""
     await require_api_token(get_settings(request), authorization)
+
+
+async def require_write_auth(request: Request, authorization: str | None = Header(default=None)) -> None:
+    """Require API authentication with write access."""
+    await require_api_write_token(get_settings(request), authorization)

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">PgRelay admin API screenshot placeholder</title>
-  <desc id="desc">A placeholder screenshot showing a PgRelay operations view with job, queue, and worker status panels.</desc>
+  <title id="title">PgRelay admin console concept</title>
+  <desc id="desc">A concept image showing a possible PgRelay operations view with job, queue, and worker status panels.</desc>
   <defs>
     <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#f7faf9"/>
@@ -18,7 +18,7 @@
   <circle cx="150" cy="104" r="7" fill="#f4c95d"/>
   <circle cx="175" cy="104" r="7" fill="#70c98d"/>
   <text x="220" y="111" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="19" font-weight="700" fill="#f6fbf9">PgRelay Admin API</text>
-  <text x="1035" y="110" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" fill="#b8d0c8">placeholder</text>
+  <text x="1035" y="110" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" fill="#b8d0c8">concept</text>
 
   <rect x="128" y="176" width="246" height="118" rx="10" fill="#f8fbfa" stroke="#d9e5e1"/>
   <text x="150" y="212" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="700" fill="#29443c">Pending jobs</text>
@@ -82,5 +82,5 @@
   <text x="906" y="552" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="700" fill="#6c3b1e">webhooks-paused</text>
   <circle cx="1104" cy="546" r="7" fill="#d97706"/>
 
-  <text x="128" y="626" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#607870">Placeholder image. Replace with a real PgRelay console or FastAPI /docs screenshot before publishing a release page.</text>
+  <text x="128" y="626" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#607870">Concept image. PgRelay currently ships the admin API and CLI.</text>
 </svg>

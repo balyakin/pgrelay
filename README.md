@@ -11,11 +11,10 @@ It is intentionally not an exactly-once system. PgRelay gives you at-least-once 
 jobs, replay, and enough operator API to see what happened. Any external side effect still needs an idempotency key on
 the receiving side.
 
-![PgRelay admin API screenshot placeholder](docs/screenshot-placeholder.svg)
+![PgRelay admin console concept](docs/screenshot-placeholder.svg)
 
-The project currently ships an admin API and CLI rather than a separate browser console. The image above is a local
-placeholder for the admin surface, included so repository pages and generated docs have something concrete to render.
-Replace it with a real console or `/docs` screenshot when that UI exists.
+The image is a concept for a possible browser admin console. PgRelay currently ships the admin API and CLI; a separate
+browser console is not part of this release.
 
 ## What You Get
 

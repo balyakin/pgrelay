@@ -2,6 +2,19 @@
 
 PostgreSQL-backed transactional outbox and reliable background jobs for Python services.
 
+[![CI][badge-ci]][ci]
+[![PyPI][badge-pypi]][pypi]
+![Python][badge-python]
+![PostgreSQL][badge-postgres]
+![Coverage gate][badge-coverage]
+![Checks][badge-checks]
+![Docker smoke][badge-docker]
+[![License: MIT][badge-license]][license]
+
+CI runs Ruff, mypy, pytest with an 85% coverage gate across Python 3.12/3.13 and PostgreSQL 15/16/17, plus a
+Docker Compose smoke test. The test suite covers enqueue, claim, leases, heartbeat, idempotency, purge, replay/cancel,
+retry/DLQ, HTTP workers, process recovery, API jobs, and runner behavior.
+
 PgRelay is for the awkward space between "just call the webhook in the request" and "we need a separate queueing
 platform". It stores jobs in the same PostgreSQL database your application already commits to, then runs them from a
 small asyncio worker. The SDK writes into your existing SQLAlchemy `AsyncSession`, so a domain row and the job that
@@ -230,3 +243,15 @@ MIT. See [LICENSE](LICENSE).
 ## Development
 
 This project was developed with AI assistance and is maintained by the author.
+
+[badge-ci]: https://github.com/balyakin/pgrelay/actions/workflows/ci.yml/badge.svg
+[badge-pypi]: https://img.shields.io/pypi/v/pgrelay.svg
+[badge-python]: https://img.shields.io/badge/python-3.12%20%7C%203.13-blue
+[badge-postgres]: https://img.shields.io/badge/postgresql-15%20%7C%2016%20%7C%2017-blue
+[badge-coverage]: https://img.shields.io/badge/coverage%20gate-85%25-brightgreen
+[badge-checks]: https://img.shields.io/badge/checks-ruff%20%7C%20mypy%20%7C%20pytest-brightgreen
+[badge-docker]: https://img.shields.io/badge/docker-smoke%20test-brightgreen
+[badge-license]: https://img.shields.io/badge/license-MIT-green.svg
+[ci]: https://github.com/balyakin/pgrelay/actions/workflows/ci.yml
+[license]: LICENSE
+[pypi]: https://pypi.org/project/pgrelay/

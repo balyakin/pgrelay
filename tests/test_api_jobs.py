@@ -146,6 +146,7 @@ async def test_detail_job_redacts_sensitive_fields(api_client: httpx.AsyncClient
                 "headers": {"Authorization": "Bearer target-secret", "X-Trace": "trace"},
                 "json": {"card": "4111111111111111"},
             },
+            "headers": {"X-Webhook-Signature": "sha256=target-secret", "X-Trace": "trace"},
             "metadata": {"tenant": "acme"},
         },
         headers=headers,
@@ -159,7 +160,7 @@ async def test_detail_job_redacts_sensitive_fields(api_client: httpx.AsyncClient
     assert response.status_code == 200
     body = response.json()
     assert body["payload"] == {"redacted": REDACTED_VALUE}
-    assert body["headers"] == {}
+    assert body["headers"] == {"redacted": REDACTED_VALUE}
     assert body["metadata"] == {"redacted": REDACTED_VALUE}
 
 

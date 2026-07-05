@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from pgrelay.utils.redaction import REDACTED_VALUE, redact_headers
+from pgrelay.utils.redaction import REDACTED_VALUE
 
 
 def get_redacted_mapping() -> dict[str, str]:
@@ -15,7 +15,7 @@ def get_redacted_mapping() -> dict[str, str]:
 
 
 class JobResponse(BaseModel):
-    """Detailed job response including payload."""
+    """Detailed job response with redacted sensitive fields."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,7 +49,7 @@ class JobResponse(BaseModel):
     def redact_sensitive_fields(self) -> "JobResponse":
         """Redact sensitive fields before returning API responses."""
         self.payload = get_redacted_mapping()
-        self.headers = redact_headers(self.headers)
+        self.headers = get_redacted_mapping()
         self.metadata = get_redacted_mapping()
         return self
 

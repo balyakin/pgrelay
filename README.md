@@ -140,6 +140,15 @@ Python handler jobs use an explicit process-local handler registry: each worker 
 names in its application code. HTTP jobs do not use that registry; job state, attempts, leases, and queue state live in
 PostgreSQL.
 
+Run a custom worker for Python handler jobs:
+
+```bash
+PGRELAY_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres \
+  python examples/handler_worker.py
+```
+
+See [examples/handler_worker.py](examples/handler_worker.py) for the matching `orders.recalculate_totals` handler.
+
 ## CLI
 
 ```bash
@@ -171,7 +180,7 @@ Authenticated endpoints require `Authorization: Bearer <token>`:
 | --- | --- | --- |
 | `POST` | `/v1/jobs` | Enqueue a job through the admin API |
 | `GET` | `/v1/jobs` | List jobs without payload fields |
-| `GET` | `/v1/jobs/{job_id}` | Read one job, including payload |
+| `GET` | `/v1/jobs/{job_id}` | Read one job with sensitive fields redacted |
 | `GET` | `/v1/jobs/{job_id}/attempts` | Read attempt history |
 | `POST` | `/v1/jobs/{job_id}/replay` | Create a fresh pending job from an existing one |
 | `POST` | `/v1/jobs/{job_id}/cancel` | Cancel a pending job |
@@ -230,12 +239,12 @@ exhausted.
 - Design receivers to handle duplicate delivery. At-least-once is the contract.
 - Use stable `idempotency_key` values for effects that should not be queued twice.
 - Keep HTTP job hosts allowlisted. The worker follows no redirects and blocks private network targets by default.
-- Admin API job details redact payloads, metadata, secret headers, and response body previews.
+- Admin API job details redact payloads, headers, metadata, and response body previews.
 - Watch dead-letter jobs. They are usually either a receiver problem, a bad payload, or a missing idempotency rule.
 - Run more worker processes for throughput, but size the database pool so each worker has room to claim, heartbeat, and
   finish jobs.
-- Treat payloads as operational data. Job list endpoints omit payloads, but detail endpoints return them to authorized
-  callers.
+- Treat payloads as operational data. Job list endpoints omit payloads, and detail endpoints redact payloads before
+  returning jobs.
 
 For state transitions, guarantees, and failure modes, see [Architecture](docs/architecture.md).
 For operational sizing, polling cost, retention, vacuum, and scaling limits, see

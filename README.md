@@ -11,7 +11,7 @@ It is intentionally not an exactly-once system. PgRelay gives you at-least-once 
 jobs, replay, and enough operator API to see what happened. Any external side effect still needs an idempotency key on
 the receiving side.
 
-![PgRelay admin console concept](docs/screenshot-placeholder.svg)
+![PgRelay admin console concept](docs/admin-console-concept.svg)
 
 The image is a concept for a possible browser admin console. PgRelay currently ships the admin API and CLI; a separate
 browser console is not part of this release.
@@ -37,6 +37,8 @@ or a small internal handler that should run after a transaction is durable.
 It is not trying to replace Kafka, Temporal, Celery, SQS, or a workflow engine. If you need fan-out streams,
 long-running durable workflows, cross-language workers, hosted scheduling, or exactly-once effects in another system,
 use the tool built for that job.
+
+For a direct comparison with Celery, Taskiq, Procrastinate, and PgQueuer, see [Comparison](docs/comparison.md).
 
 ## Quick Start
 

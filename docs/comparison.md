@@ -1,4 +1,7 @@
-# Why not Celery, Taskiq, Procrastinate, or PgQueuer?
+# Comparison with Celery, Taskiq, Procrastinate, and PgQueuer
+
+This page is not a claim that PgRelay is universally better. It is a positioning note: when an existing tool is a
+better fit, use it.
 
 PgRelay is not the first PostgreSQL-backed queue, and it should not pretend to be. Procrastinate and PgQueuer are the
 closest neighbors: both already use PostgreSQL as queue storage and both are serious projects worth evaluating first.
@@ -30,8 +33,8 @@ jobs after commit. The admin API and CLI are part of that operational surface.
     <tr>
       <td>Taskiq</td>
       <td>
-        You want an asyncio-native Celery-style task manager with pluggable brokers, typed task calls, middleware,
-        result backends, and a worker model centered on Python task functions.
+        You want an asyncio-native task framework with pluggable brokers, typed task calls, middleware, result
+        backends, and a worker model centered on Python task functions.
       </td>
       <td>
         You want the database transaction to be the enqueue boundary and prefer a small PostgreSQL-backed outbox over
@@ -72,7 +75,9 @@ Use Procrastinate or PgQueuer when you specifically want a PostgreSQL queue libr
 and may be the better choice if their task APIs, wakeup model, scheduling, or framework integrations match your service.
 
 Use PgRelay when the important part is not "run a Python function later" but "write a domain row and the durable side
-effect request in the same database transaction." That is the whole bet.
+effect request in the same database transaction."
+
+That is the core trade-off PgRelay optimizes for.
 
 ## References
 

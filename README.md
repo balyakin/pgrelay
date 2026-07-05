@@ -38,7 +38,8 @@ It is not trying to replace Kafka, Temporal, Celery, SQS, or a workflow engine. 
 long-running durable workflows, cross-language workers, hosted scheduling, or exactly-once effects in another system,
 use the tool built for that job.
 
-For a direct comparison with Celery, Taskiq, Procrastinate, and PgQueuer, see [Comparison](docs/comparison.md).
+For trade-offs against nearby alternatives, see
+[Comparison with Celery, Taskiq, Procrastinate, and PgQueuer](docs/comparison.md).
 
 ## Quick Start
 
@@ -210,6 +211,8 @@ a worker dies, lease recovery returns the job to `pending` or moves it to `dead_
   callers.
 
 For state transitions, guarantees, and failure modes, see [Architecture](docs/architecture.md).
+For operational sizing, polling cost, retention, vacuum, and scaling limits, see
+[Production Readiness and Limits](docs/production.md).
 
 ## Project Status
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Fixed README links and project metadata on PyPI
+
 ## 0.1.1
 
 - Hardened admin API authentication and sensitive job data redaction

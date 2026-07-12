@@ -1,6 +1,6 @@
 [project]
 name = "pgrelay"
-version = "0.1.1"
+version = "0.1.2"
 description = "PostgreSQL-backed transactional outbox and reliable jobs for Python backends"
 authors = [
     {name = "PgRelay maintainers"}
@@ -22,6 +22,12 @@ dependencies = [
     "typer (>=0.16.0,<1.0.0)",
     "uvicorn[standard] (>=0.35.0,<1.0.0)"
 ]
+
+[project.urls]
+Repository = "https://github.com/balyakin/pgrelay"
+Documentation = "https://github.com/balyakin/pgrelay#readme"
+Issues = "https://github.com/balyakin/pgrelay/issues"
+Changelog = "https://github.com/balyakin/pgrelay/blob/main/CHANGELOG.md"
 
 
 [build-system]

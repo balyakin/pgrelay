@@ -20,14 +20,14 @@ platform". It stores jobs in the same PostgreSQL database your application alrea
 small asyncio worker. The SDK writes into your existing SQLAlchemy `AsyncSession`, so a domain row and the job that
 publishes it can commit or roll back together.
 
-PgRelay 0.1.1 is not a `LISTEN/NOTIFY` queue. Workers poll PostgreSQL, claim ready rows with `FOR UPDATE SKIP LOCKED`,
+PgRelay 0.1.2 is not a `LISTEN/NOTIFY` queue. Workers poll PostgreSQL, claim ready rows with `FOR UPDATE SKIP LOCKED`,
 and use durable leases for recovery after worker crashes.
 
 It is intentionally not an exactly-once system. PgRelay gives you at-least-once delivery, retries, leases, dead-letter
 jobs, replay, and enough operator API to see what happened. Any external side effect still needs an idempotency key on
 the receiving side.
 
-![PgRelay admin console concept](docs/admin-console-concept.svg)
+![PgRelay admin console concept](https://raw.githubusercontent.com/balyakin/pgrelay/main/docs/admin-console-concept.svg)
 
 The image is a concept for a possible browser admin console. PgRelay currently ships the admin API and CLI; a separate
 browser console is not part of this release.
@@ -55,10 +55,10 @@ long-running durable workflows, cross-language workers, hosted scheduling, or ex
 use the tool built for that job.
 
 For trade-offs against nearby alternatives, see
-[Comparison with Celery, Taskiq, Procrastinate, and PgQueuer](docs/comparison.md).
+[Comparison with Celery, Taskiq, Procrastinate, and PgQueuer][comparison].
 
 For operational limits, sizing notes, polling cost, retention, vacuum, and production checks, see
-[Production Readiness and Limits](docs/production.md).
+[Production Readiness and Limits](https://github.com/balyakin/pgrelay/blob/main/docs/production.md).
 
 ## Quick Start
 
@@ -147,7 +147,7 @@ PGRELAY_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postg
   python examples/handler_worker.py
 ```
 
-See [examples/handler_worker.py](examples/handler_worker.py) for the matching `orders.recalculate_totals` handler.
+See [examples/handler_worker.py][handler-example] for the matching `orders.recalculate_totals` handler.
 
 ## CLI
 
@@ -200,7 +200,8 @@ curl -H "Authorization: Bearer dev-token-change-me" \
 
 ## Configuration
 
-PgRelay uses `pydantic-settings` with the `PGRELAY_` prefix. The sample file is [.env.example](.env.example).
+PgRelay uses `pydantic-settings` with the `PGRELAY_` prefix. The sample file is
+[.env.example](https://github.com/balyakin/pgrelay/blob/main/.env.example).
 
 The settings you will usually touch first:
 
@@ -246,13 +247,14 @@ exhausted.
 - Treat payloads as operational data. Job list endpoints omit payloads, and detail endpoints redact payloads before
   returning jobs.
 
-For state transitions, guarantees, and failure modes, see [Architecture](docs/architecture.md).
+For state transitions, guarantees, and failure modes, see
+[Architecture](https://github.com/balyakin/pgrelay/blob/main/docs/architecture.md).
 For operational sizing, polling cost, retention, vacuum, and scaling limits, see
-[Production Readiness and Limits](docs/production.md).
+[Production Readiness and Limits](https://github.com/balyakin/pgrelay/blob/main/docs/production.md).
 
 ## Project Status
 
-This repository is currently at `0.1.1`. The core API, worker, SDK, migrations, and local Docker stack are present, but
+This repository is currently at `0.1.2`. The core API, worker, SDK, migrations, and local Docker stack are present, but
 the project should still be treated as young. Pin versions, test against your own failure modes, and expect the edges to
 be sharper than a mature hosted queue.
 
@@ -261,7 +263,7 @@ enqueue, and OpenTelemetry integration.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/balyakin/pgrelay/blob/main/LICENSE).
 
 ## Development
 
@@ -276,6 +278,8 @@ This project was developed with AI assistance and is maintained by the author.
 [badge-docker]: https://img.shields.io/badge/docker-smoke%20test-brightgreen
 [badge-license]: https://img.shields.io/badge/license-MIT-green.svg
 [ci]: https://github.com/balyakin/pgrelay/actions/workflows/ci.yml
-[license]: LICENSE
+[comparison]: https://github.com/balyakin/pgrelay/blob/main/docs/comparison.md
+[handler-example]: https://github.com/balyakin/pgrelay/blob/main/examples/handler_worker.py
+[license]: https://github.com/balyakin/pgrelay/blob/main/LICENSE
 [pypi]: https://pypi.org/project/pgrelay/
-[production]: docs/production.md
+[production]: https://github.com/balyakin/pgrelay/blob/main/docs/production.md

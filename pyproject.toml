@@ -1,6 +1,6 @@
 [project]
 name = "pgrelay"
-version = "0.1.0"
+version = "0.1.1"
 description = "PostgreSQL-backed transactional outbox and reliable jobs for Python backends"
 authors = [
     {name = "PgRelay maintainers"}

@@ -55,7 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             await engine.dispose()
 
-    app = FastAPI(title="PgRelay Admin API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="PgRelay Admin API", version="0.1.1", lifespan=lifespan)
     app.add_exception_handler(PgRelayError, _pgrelay_error_handler)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, _request_validation_handler)  # type: ignore[arg-type]
     app.add_exception_handler(HTTPException, _http_exception_handler)  # type: ignore[arg-type]

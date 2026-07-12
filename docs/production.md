@@ -72,7 +72,7 @@ raising concurrency.
 
 ## Polling Cost
 
-PgRelay 0.1.0 polls PostgreSQL. It does not yet wake workers with `LISTEN/NOTIFY`.
+PgRelay 0.1.1 polls PostgreSQL. It does not yet wake workers with `LISTEN/NOTIFY`.
 
 An idle worker with free slots runs roughly this every poll interval:
 
@@ -222,7 +222,7 @@ PgRelay has worker-side backpressure:
 - `pgrelay_queue.concurrency_limit` caps leased jobs per queue across workers;
 - queue pause/resume can stop new claims from a queue.
 
-PgRelay 0.1.0 does not enforce producer-side backpressure. It will keep accepting enqueue writes as long as PostgreSQL
+PgRelay 0.1.1 does not enforce producer-side backpressure. It will keep accepting enqueue writes as long as PostgreSQL
 accepts the transaction.
 
 Add application-side limits when any of these rise:

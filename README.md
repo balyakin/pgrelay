@@ -20,7 +20,7 @@ platform". It stores jobs in the same PostgreSQL database your application alrea
 small asyncio worker. The SDK writes into your existing SQLAlchemy `AsyncSession`, so a domain row and the job that
 publishes it can commit or roll back together.
 
-PgRelay 0.1.0 is not a `LISTEN/NOTIFY` queue. Workers poll PostgreSQL, claim ready rows with `FOR UPDATE SKIP LOCKED`,
+PgRelay 0.1.1 is not a `LISTEN/NOTIFY` queue. Workers poll PostgreSQL, claim ready rows with `FOR UPDATE SKIP LOCKED`,
 and use durable leases for recovery after worker crashes.
 
 It is intentionally not an exactly-once system. PgRelay gives you at-least-once delivery, retries, leases, dead-letter
@@ -252,7 +252,7 @@ For operational sizing, polling cost, retention, vacuum, and scaling limits, see
 
 ## Project Status
 
-This repository is currently at `0.1.0`. The core API, worker, SDK, migrations, and local Docker stack are present, but
+This repository is currently at `0.1.1`. The core API, worker, SDK, migrations, and local Docker stack are present, but
 the project should still be treated as young. Pin versions, test against your own failure modes, and expect the edges to
 be sharper than a mature hosted queue.
 
